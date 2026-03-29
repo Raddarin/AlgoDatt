@@ -5,6 +5,7 @@
 #include <iterator>
 #include <memory_resource>
 #include <ostream>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -12,13 +13,16 @@
 #include <vector>
 
 class node {
-private:
-  std::vector<std::string> edges;
-  std::string name;
 
 public:
+  std::string name;
   node(std::string n) : name(n) {};
+  node() : name(""), visited(0), dist(0) {};
   void ad_edge(std::string linked_node) { edges.push_back(linked_node); }
+  int visited;
+  std::vector<std::string> edges;
+  std::string pred;
+  int dist;
 };
 
 struct problem_data {
@@ -36,12 +40,13 @@ std::unordered_map<std::string, node>
 create_node_system(std::vector<std::string> &input);
 problem_data init(int argc, char *argv[]);
 read_data reed_input(int argc, char *argv[]);
-void run(std::unordered_map<std::string, node>);
+void run(problem_data &data);
+int BFS(std::unordered_map<std::string, node> &Graf, std::string s,
+        std::string t);
 
 int main(int argc, char *argv[]) {
   problem_data data = init(argc, argv);
-  // run(&data);
-  //  terminate();
+  run(data);
   return 1;
 }
 
@@ -129,4 +134,46 @@ bool is_it_in_word(std::string last_four, std::string d) {
   return true;
 }
 
-void BFS(graf, std::string s, std::string t) {}
+void run(problem_data &data) {
+  std::unordered_map<std::string, node> &Graf = data.graph;
+  for (std::vector<std::string> &query : data.queries) {
+    std::string s = query[0];
+    std::string t = query[1];
+    std::cout << BFS(Graf, s, t) << std::endl;
+  }
+}
+
+int BFS(std::unordered_map<std::string, node> &Graf, std::string s,
+        std::string t) {
+  for (auto &[id, v] : Graf) {
+    v.visited = 0;
+    v.dist = 0;
+  }
+
+  Graf[s].visited = 1;
+  Graf[s].dist = 0;
+
+  std::queue<std::string> q;
+  q.push(s);
+
+  while (!q.empty()) {
+    std::string current_name = q.front();
+    q.pop();
+
+    node &n = Graf[current_name];
+
+    for (std::string &w : n.edges) {
+      if (Graf[w].visited == 0) {
+        Graf[w].visited = 1;
+        Graf[w].dist = n.dist + 1;
+        Graf[w].pred = n.name;
+
+        if (w == t) {
+          return Graf[w].dist;
+        }
+        q.push(w);
+      }
+    }
+  }
+  return -1;
+}
