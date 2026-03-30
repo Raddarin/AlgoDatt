@@ -35,7 +35,7 @@ struct read_data {
   std::vector<std::vector<std::string>> pair_list;
 };
 
-bool is_it_in_word(std::string last_four, std::string d);
+bool is_it_in_word(const std::string &last_four, const std::string &d);
 std::unordered_map<std::string, node>
 create_node_system(std::vector<std::string> &input);
 problem_data init(int argc, char *argv[]);
@@ -43,6 +43,8 @@ read_data reed_input(int argc, char *argv[]);
 void run(problem_data &data);
 int BFS(std::unordered_map<std::string, node> &Graf, std::string s,
         std::string t);
+void print_path(std::unordered_map<std::string, node> &Graf, std::string s,
+                std::string t);
 
 int main(int argc, char *argv[]) {
   problem_data data = init(argc, argv);
@@ -124,10 +126,13 @@ create_node_system(std::vector<std::string> &input) {
 
 // Takes the last four letters in a word and another word and checks if should
 // be connected with another
-bool is_it_in_word(std::string last_four, std::string d) {
-  std::unordered_set<char> word_set(d.begin(), d.end());
-  for (char c : last_four) {
-    if (!word_set.count(c)) {
+bool is_it_in_word(const std::string &last_four, const std::string &d) {
+  int counts[256] = {0};
+  for (unsigned char c : d) {
+    counts[c]++;
+  }
+  for (unsigned char c : last_four) {
+    if (--counts[c] < 0) {
       return false;
     }
   }
@@ -139,12 +144,43 @@ void run(problem_data &data) {
   for (std::vector<std::string> &query : data.queries) {
     std::string s = query[0];
     std::string t = query[1];
-    std::cout << BFS(Graf, s, t) << std::endl;
+    int dist = BFS(Graf, s, t);
+    // std::cout << std::endl;
+    // std::cout << s << "->" << t << std::endl;
+    if (dist != -1) {
+      std::cout << dist << std::endl;
+      // print_path(Graf, s, t);
+    } else {
+      std::cout << "Imposibel" << std::endl;
+    }
   }
+}
+
+void print_path(std::unordered_map<std::string, node> &Graf, std::string s,
+                std::string t) {
+  std::vector<std::string> path;
+  std::string current = t;
+
+  // Följ pred-pekarna bakåt
+  while (current != s && current != "") {
+    path.push_back(current);
+    current = Graf[current].pred;
+  }
+  path.push_back(s);
+
+  // Skriv ut i rätt ordning (start -> mål)
+  std::cout << "Väg: ";
+  for (int i = path.size() - 1; i >= 0; i--) {
+    std::cout << path[i] << (i == 0 ? "" : " -> ");
+  }
+  std::cout << std::endl;
 }
 
 int BFS(std::unordered_map<std::string, node> &Graf, std::string s,
         std::string t) {
+  if (s == t) {
+    return 0;
+  }
   for (auto &[id, v] : Graf) {
     v.visited = 0;
     v.dist = 0;
